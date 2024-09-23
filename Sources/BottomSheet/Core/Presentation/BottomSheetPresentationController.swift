@@ -332,10 +332,14 @@ public final class BottomSheetPresentationController: UIPresentationController {
         }
         let height = min(preferredHeight, maxHeight)
 
+        let maxWidth = containerView.bounds.width
+        let preferredWidth = presentedViewController.preferredContentSize.width
+        let width = min(preferredWidth, maxWidth)
+
         return .init(
-            x: 0,
+            x: (containerView.bounds.width - width).pixelCeiled,
             y: (containerView.bounds.height - height).pixelCeiled,
-            width: containerView.bounds.width,
+            width: width.pixelCeiled,
             height: height.pixelCeiled
         )
     }

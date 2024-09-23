@@ -88,8 +88,10 @@ public final class BottomSheetNavigationAnimatedTransitioning: NSObject, UIViewC
             maxHeight -= appearance.height
         }
 
+        let maxWidth = containerViewWindow.bounds.size.width
+
         let targetSize = CGSize(
-            width: preferredContentSize.width,
+            width: min(preferredContentSize.width, maxWidth),
             height: min(preferredContentSize.height, maxHeight)
         )
 

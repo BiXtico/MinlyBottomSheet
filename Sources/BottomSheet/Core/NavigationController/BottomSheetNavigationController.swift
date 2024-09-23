@@ -47,6 +47,7 @@ public final class BottomSheetNavigationController: UINavigationController {
         view.backgroundColor = .white.withAlphaComponent(0.6)
 
         modalPresentationStyle = .custom
+        definesPresentationContext = true
     }
 
     // MARK: - UINavigationController
@@ -129,7 +130,7 @@ public final class BottomSheetNavigationController: UINavigationController {
 
     private func updatePreferredContentSize() {
         preferredContentSize = CGSize(
-            width: view.bounds.width,
+            width: topViewController?.preferredContentSize.width ?? view.bounds.width,
             height: topViewController?.preferredContentSize.height ?? 0 + additionalSafeAreaInsets.top + additionalSafeAreaInsets.bottom
         )
     }

@@ -46,16 +46,16 @@ final class ResizeViewController: UIViewController {
 
     private lazy var actions = [
         ButtonAction(title: "x2", backgroundColor: .systemBlue, handler: { [unowned self] in
-            updateContentHeight(newValue: currentHeight * 2)
+            updateContentHeight(newValue: currentHeight * 2, width: currentWidth * 2)
         }),
         ButtonAction(title: "/2", backgroundColor: .systemBlue, handler: { [unowned self] in
-            updateContentHeight(newValue: currentHeight / 2)
+            updateContentHeight(newValue: currentHeight / 2, width: currentWidth / 2)
         }),
         ButtonAction(title: "+100", backgroundColor: .systemBlue, handler: { [unowned self] in
-            updateContentHeight(newValue: currentHeight + 100)
+            updateContentHeight(newValue: currentHeight + 100, width: currentWidth + 100)
         }),
         ButtonAction(title: "-100", backgroundColor: .systemBlue, handler: { [unowned self] in
-            updateContentHeight(newValue: currentHeight - 100)
+            updateContentHeight(newValue: currentHeight - 100, width: currentWidth - 100)
         }),
     ]
 
@@ -65,10 +65,17 @@ final class ResizeViewController: UIViewController {
         }
     }
 
+    private var currentWidth: CGFloat {
+        didSet {
+            updatePreferredContentSize()
+        }
+    }
+
     // MARK: - Init
 
-    init(initialHeight: CGFloat) {
+    init(initialHeight: CGFloat, initialWidth: CGFloat) {
         self.currentHeight = initialHeight
+        self.currentWidth = initialWidth
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -147,16 +154,17 @@ final class ResizeViewController: UIViewController {
     // MARK: - Private methods
 
     private func updatePreferredContentSize() {
-        _scrollView.contentSize = CGSize(width: UIScreen.main.bounds.width, height: currentHeight)
+        _scrollView.contentSize = CGSize(width: currentWidth, height: currentHeight)
         contentSizeLabel.text = "preferredContentHeight = \(currentHeight)"
         preferredContentSize = _scrollView.contentSize
     }
 
-    private func updateContentHeight(newValue: CGFloat) {
+    private func updateContentHeight(newValue: CGFloat, width: CGFloat) {
         guard newValue >= 200, newValue < 5000 else { return }
 
         let updates = { [self] in
             currentHeight = newValue
+            currentWidth = newValue
             updatePreferredContentSize()
         }
 
@@ -169,7 +177,7 @@ final class ResizeViewController: UIViewController {
 
     @objc
     private func handleShowNext() {
-        let viewController = ResizeViewController(initialHeight: currentHeight)
+        let viewController = ResizeViewController(initialHeight: currentHeight, initialWidth: currentWidth)
         navigationController?.pushViewController(viewController, animated: true)
     }
 
