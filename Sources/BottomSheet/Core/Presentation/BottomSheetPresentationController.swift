@@ -165,7 +165,8 @@ public final class BottomSheetPresentationController: UIPresentationController {
     }
 
     public override func preferredContentSizeDidChange(forChildContentContainer container: UIContentContainer) {
-        updatePresentedViewSize()
+        super.preferredContentSizeDidChange(forChildContentContainer: container)
+        updatePresentedViewSize(animated: true)
     }
 
     // MARK: - Interactive Dismissal
@@ -322,18 +323,33 @@ public final class BottomSheetPresentationController: UIPresentationController {
         )
     }
 
-    private func updatePresentedViewSize() {
-        guard let presentedView = presentedView else {
+    private func updatePresentedViewSize(animated: Bool = true) {
+        guard let presentedView = presentedView, let containerView = containerView else {
             return
         }
 
         let targetFrame = targetFrameForPresentedView()
 
-        presentedView.frame = targetFrame
+        if animated {
+            UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseInOut, animations: {
+                containerView.frame = targetFrame
+                presentedView.frame = containerView.bounds
+                self.updatePresentedViewTransform()
+                containerView.layoutIfNeeded()
+            }, completion: nil)
+        } else {
+            containerView.frame = targetFrame
+            presentedView.frame = containerView.bounds
+            updatePresentedViewTransform()
+        }
+    }
+
+    private func updatePresentedViewTransform() {
+        guard let presentedView = presentedView else { return }
 
         switch configuration.bottomSheetOrientation {
         case .portrait:
-            presentedView.transform = CGAffineTransform.identity
+            presentedView.transform = .identity
         case .landscape:
             presentedView.transform = CGAffineTransform(rotationAngle: .pi / 2)
         }
@@ -503,39 +519,39 @@ extension BottomSheetPresentationController: UIViewControllerAnimatedTransitioni
         let isPresenting = destinationViewController.isBeingPresented
         let presentedView = isPresenting ? destinationView : sourceView
         let containerView = transitionContext.containerView
+
         if isPresenting {
             containerView.addSubview(destinationView)
-
-            destinationView.frame = containerView.bounds
         }
 
         sourceView.layoutIfNeeded()
         destinationView.layoutIfNeeded()
 
-        let frameInContainer = frameOfPresentedViewInContainerView
+        let finalFrame = targetFrameForPresentedView()
         let offscreenFrame = CGRect(
-            origin: CGPoint(
-                x: 0,
-                y: containerView.bounds.height
-            ),
-            size: sourceView.frame.size
+            origin: CGPoint(x: finalFrame.origin.x, y: containerView.frame.height),
+            size: finalFrame.size
         )
 
-        presentedView.frame = isPresenting ? offscreenFrame : frameInContainer
+        if isPresenting {
+            presentedView.frame = offscreenFrame
+        }
 
         applyStyle()
 
         let animations = {
-            presentedView.frame = isPresenting ? frameInContainer : offscreenFrame
+            if isPresenting {
+                presentedView.frame = finalFrame
+            } else {
+                presentedView.frame = offscreenFrame
+            }
         }
 
         let completion = { (completed: Bool) in
-            transitionContext.completeTransition(completed && !transitionContext.transitionWasCancelled)
-            if #available(iOS 13, *), transitionContext.transitionWasCancelled {
-                let sourceViewFrame = sourceView.frame
-                sourceView.frame = .zero
-                sourceView.frame = sourceViewFrame
+            if !isPresenting {
+                presentedView.removeFromSuperview()
             }
+            transitionContext.completeTransition(completed && !transitionContext.transitionWasCancelled)
         }
 
         let options: UIView.AnimationOptions = transitionContext.isInteractive ? .curveLinear : .curveEaseInOut
