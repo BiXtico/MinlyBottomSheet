@@ -58,7 +58,6 @@ public final class BottomSheetPresentationController: UIPresentationController {
 
     private var interactionController: UIPercentDrivenInteractiveTransition?
 
-    public var shadingView: UIView?
     public var pullBar: PullBar?
 
     private weak var trackedScrollView: UIScrollView?
@@ -66,7 +65,7 @@ public final class BottomSheetPresentationController: UIPresentationController {
     private var cachedInsets: UIEdgeInsets = .zero
 
     private let dismissalHandler: BottomSheetModalDismissalHandler
-    private let configuration: BottomSheetConfiguration
+    private var configuration: BottomSheetConfiguration
 
     // MARK: - Init
 
@@ -79,6 +78,16 @@ public final class BottomSheetPresentationController: UIPresentationController {
         self.dismissalHandler = dismissalHandler
         self.configuration = configuration
         super.init(presentedViewController: presentedViewController, presenting: presentingViewController)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(orientationDidChange),
+            name: UIDevice.orientationDidChangeNotification,
+            object: nil
+        )
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
     }
 
     // MARK: - Setup
@@ -119,8 +128,6 @@ public final class BottomSheetPresentationController: UIPresentationController {
 
     public override func presentationTransitionWillBegin() {
         state = .presenting
-
-        addSubviews()
     }
 
     public override func presentationTransitionDidEnd(_ completed: Bool) {
@@ -140,7 +147,6 @@ public final class BottomSheetPresentationController: UIPresentationController {
 
     public override func dismissalTransitionDidEnd(_ completed: Bool) {
         if completed {
-            removeSubviews()
             removeScrollTrackingIfNeeded()
 
             state = .dismissed
@@ -151,11 +157,7 @@ public final class BottomSheetPresentationController: UIPresentationController {
     }
 
     public override var shouldPresentInFullscreen: Bool {
-        if #available(iOS 17.0, *) {
-            return true
-        } else {
-            return false
-        }
+        true
     }
 
     public override var frameOfPresentedViewInContainerView: CGRect {
@@ -163,12 +165,6 @@ public final class BottomSheetPresentationController: UIPresentationController {
     }
 
     public override func preferredContentSizeDidChange(forChildContentContainer container: UIContentContainer) {
-        updatePresentedViewSize()
-    }
-
-    public override func containerViewDidLayoutSubviews() {
-        cachedInsets = presentedView?.window?.safeAreaInsets ?? .zero
-
         updatePresentedViewSize()
     }
 
@@ -264,46 +260,12 @@ public final class BottomSheetPresentationController: UIPresentationController {
 
         presentedViewController.view.clipsToBounds = true
 
-        pullBar?.layer.mask = nil
         presentedViewController.view.layer.cornerRadius = configuration.cornerRadius
         presentedViewController.view.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
     }
 
     private func addSubviews() {
-        guard let containerView = containerView else {
-            assertionFailure()
-            return
-        }
-
-        addShadow(containerView: containerView)
-        addPullBarIfNeeded(containerView: containerView)
-    }
-
-    private func addPullBarIfNeeded(containerView: UIView) {
-        guard case .visible(let appearance) = configuration.pullBarConfiguration else { return }
-        let pullBar = PullBar()
-        pullBar.frame.size = CGSize(width: containerView.frame.width, height: appearance.height)
-        containerView.addSubview(pullBar)
-
-        self.pullBar = pullBar
-    }
-
-    private func addShadow(containerView: UIView) {
-        var shadingView = UIView()
-        if let blur = configuration.shadowConfiguration.blur {
-            shadingView = UIVisualEffectView(effect: UIBlurEffect(style: blur))
-        }
-
-        shadingView.backgroundColor = configuration.shadowConfiguration.backgroundColor
-        containerView.addSubview(shadingView)
-        shadingView.frame = containerView.bounds
-
-        let tapGesture = UITapGestureRecognizer()
-        shadingView.addGestureRecognizer(tapGesture)
-
-        tapGesture.addTarget(self, action: #selector(handleShadingViewTapGesture))
-
-        self.shadingView = shadingView
+        assertionFailure()
     }
 
     @objc
@@ -311,34 +273,50 @@ public final class BottomSheetPresentationController: UIPresentationController {
         dismissIfPossible()
     }
 
-    private func removeSubviews() {
-        shadingView?.removeFromSuperview()
-        shadingView = nil
-        pullBar?.removeFromSuperview()
-        pullBar = nil
+    public override func containerViewDidLayoutSubviews() {
+        super.containerViewDidLayoutSubviews()
+
+        guard let containerView = containerView, let presentedView = presentedView else { return }
+
+        containerView.frame = targetFrameForPresentedView()
+        presentedView.frame = containerView.bounds
+    }
+
+    @objc
+    private func orientationDidChange() {
+        // Update configuration if necessary
+        if UIDevice.current.orientation.isLandscape {
+            configuration.bottomSheetOrientation = .landscape
+        } else {
+            configuration.bottomSheetOrientation = .portrait
+        }
+        updatePresentedViewSize()
     }
 
     private func targetFrameForPresentedView() -> CGRect {
         guard let containerView = containerView else {
-            return .zero
+            return .zero // Return zero if containerView is not available
         }
+
+        let containerWidth = containerView.bounds.width
 
         let windowInsets = presentedView?.window?.safeAreaInsets ?? cachedInsets
-
         let preferredHeight = presentedViewController.preferredContentSize.height + windowInsets.bottom
-        var maxHeight = containerView.bounds.height - windowInsets.top
-        if case .visible(let appearance) = configuration.pullBarConfiguration {
-            maxHeight -= appearance.height
-        }
-        let height = min(preferredHeight, maxHeight)
 
-        let maxWidth = containerView.bounds.width
-        let preferredWidth = presentedViewController.preferredContentSize.width
-        let width = min(preferredWidth, maxWidth)
+        let width: CGFloat = containerWidth
+        let height: CGFloat
 
-        return .init(
-            x: (containerView.bounds.width - width).pixelCeiled,
-            y: (containerView.bounds.height - height).pixelCeiled,
+        height = min(preferredHeight, UIScreen.main.bounds.height)
+
+        let xPosition = (containerWidth - width) / 2
+        let yPosition = UIScreen.main.bounds.height - height
+
+        print("Calculated X Position: \(xPosition.pixelCeiled)")
+        print("Calculated Y Position: \(yPosition.pixelCeiled)")
+
+        return CGRect(
+            x: xPosition.pixelCeiled,
+            y: yPosition.pixelCeiled,
             width: width.pixelCeiled,
             height: height.pixelCeiled
         )
@@ -349,13 +327,15 @@ public final class BottomSheetPresentationController: UIPresentationController {
             return
         }
 
-        let oldFrame = presentedView.frame
         let targetFrame = targetFrameForPresentedView()
-        if !oldFrame.isAlmostEqual(to: targetFrame) {
-            presentedView.frame = targetFrame
-            if case .visible(let appearance) = configuration.pullBarConfiguration {
-                pullBar?.frame.origin.y = presentedView.frame.minY - appearance.height + pixelSize
-            }
+
+        presentedView.frame = targetFrame
+
+        switch configuration.bottomSheetOrientation {
+        case .portrait:
+            presentedView.transform = CGAffineTransform.identity
+        case .landscape:
+            presentedView.transform = CGAffineTransform(rotationAngle: .pi / 2)
         }
     }
 
@@ -541,27 +521,16 @@ extension BottomSheetPresentationController: UIViewControllerAnimatedTransitioni
             size: sourceView.frame.size
         )
 
-        let updatePullBarFrame = {
-            guard case .visible(let appearnce) = self.configuration.pullBarConfiguration else { return }
-
-            self.pullBar?.frame.origin.y = presentedView.frame.minY - appearnce.height + pixelSize
-        }
-
         presentedView.frame = isPresenting ? offscreenFrame : frameInContainer
-        updatePullBarFrame()
-        shadingView?.alpha = isPresenting ? 0 : 1
 
         applyStyle()
 
         let animations = {
             presentedView.frame = isPresenting ? frameInContainer : offscreenFrame
-            updatePullBarFrame()
-            self.shadingView?.alpha = isPresenting ? 1 : 0
         }
 
         let completion = { (completed: Bool) in
             transitionContext.completeTransition(completed && !transitionContext.transitionWasCancelled)
-            // For fix bug: https://openradar.appspot.com/FB9075949
             if #available(iOS 13, *), transitionContext.transitionWasCancelled {
                 let sourceViewFrame = sourceView.frame
                 sourceView.frame = .zero

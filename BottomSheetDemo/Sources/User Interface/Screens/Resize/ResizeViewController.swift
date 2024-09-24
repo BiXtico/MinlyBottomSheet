@@ -151,6 +151,14 @@ final class ResizeViewController: UIViewController {
         }
     }
 
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+        .all // or specify .portrait, .landscapeLeft, etc.
+    }
+
+    override var shouldAutorotate: Bool {
+        true // Allow rotation
+    }
+
     // MARK: - Private methods
 
     private func updatePreferredContentSize() {
