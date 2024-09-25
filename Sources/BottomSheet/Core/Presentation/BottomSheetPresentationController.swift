@@ -58,15 +58,12 @@ public final class BottomSheetPresentationController: UIPresentationController {
 
     private var interactionController: UIPercentDrivenInteractiveTransition?
 
-    public var shadingView: UIView?
-    public var pullBar: PullBar?
-
     private weak var trackedScrollView: UIScrollView?
 
     private var cachedInsets: UIEdgeInsets = .zero
 
     private let dismissalHandler: BottomSheetModalDismissalHandler
-    private let configuration: BottomSheetConfiguration
+    private var configuration: BottomSheetConfiguration
 
     // MARK: - Init
 
@@ -79,13 +76,26 @@ public final class BottomSheetPresentationController: UIPresentationController {
         self.dismissalHandler = dismissalHandler
         self.configuration = configuration
         super.init(presentedViewController: presentedViewController, presenting: presentingViewController)
+        if configuration.bottomSheetOrientation != nil {
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(orientationDidChange),
+                name: UIDevice.orientationDidChangeNotification,
+                object: nil
+            )
+        }
+    }
+
+    deinit {
+        if configuration.bottomSheetOrientation != nil {
+            NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
+        }
     }
 
     // MARK: - Setup
 
     private func setupGesturesForPresentedView() {
         setupPanGesture(for: presentedView)
-        setupPanGesture(for: pullBar)
     }
 
     private func setupPanGesture(for view: UIView?) {
@@ -119,8 +129,6 @@ public final class BottomSheetPresentationController: UIPresentationController {
 
     public override func presentationTransitionWillBegin() {
         state = .presenting
-
-        addSubviews()
     }
 
     public override func presentationTransitionDidEnd(_ completed: Bool) {
@@ -140,7 +148,6 @@ public final class BottomSheetPresentationController: UIPresentationController {
 
     public override func dismissalTransitionDidEnd(_ completed: Bool) {
         if completed {
-            removeSubviews()
             removeScrollTrackingIfNeeded()
 
             state = .dismissed
@@ -151,11 +158,7 @@ public final class BottomSheetPresentationController: UIPresentationController {
     }
 
     public override var shouldPresentInFullscreen: Bool {
-        if #available(iOS 17.0, *) {
-            return true
-        } else {
-            return false
-        }
+        true
     }
 
     public override var frameOfPresentedViewInContainerView: CGRect {
@@ -163,13 +166,8 @@ public final class BottomSheetPresentationController: UIPresentationController {
     }
 
     public override func preferredContentSizeDidChange(forChildContentContainer container: UIContentContainer) {
-        updatePresentedViewSize()
-    }
-
-    public override func containerViewDidLayoutSubviews() {
-        cachedInsets = presentedView?.window?.safeAreaInsets ?? .zero
-
-        updatePresentedViewSize()
+        super.preferredContentSizeDidChange(forChildContentContainer: container)
+        updatePresentedViewSize(animated: true)
     }
 
     // MARK: - Interactive Dismissal
@@ -232,7 +230,7 @@ public final class BottomSheetPresentationController: UIPresentationController {
         }
 
         let deceleration = 800.0 * (verticalVelocity > 0 ? -1.0 : 1.0)
-        let finalProgress = (verticalTranslation - 0.5 * verticalVelocity * verticalVelocity / CGFloat(deceleration))
+        let finalProgress = (verticalTranslation - 0.25 * verticalVelocity * verticalVelocity / CGFloat(deceleration))
             / presentedView.bounds.height
         let isThresholdPassed = finalProgress < 0.5
 
@@ -264,58 +262,33 @@ public final class BottomSheetPresentationController: UIPresentationController {
 
         presentedViewController.view.clipsToBounds = true
 
-        pullBar?.layer.mask = nil
         presentedViewController.view.layer.cornerRadius = configuration.cornerRadius
         presentedViewController.view.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
     }
 
     private func addSubviews() {
-        guard let containerView = containerView else {
-            assertionFailure()
-            return
-        }
-
-        addShadow(containerView: containerView)
-        addPullBarIfNeeded(containerView: containerView)
+        assertionFailure()
     }
 
-    private func addPullBarIfNeeded(containerView: UIView) {
-        guard case .visible(let appearance) = configuration.pullBarConfiguration else { return }
-        let pullBar = PullBar()
-        pullBar.frame.size = CGSize(width: containerView.frame.width, height: appearance.height)
-        containerView.addSubview(pullBar)
+    public override func containerViewDidLayoutSubviews() {
+        super.containerViewDidLayoutSubviews()
 
-        self.pullBar = pullBar
-    }
+        guard let containerView = containerView, let presentedView = presentedView else { return }
 
-    private func addShadow(containerView: UIView) {
-        var shadingView = UIView()
-        if let blur = configuration.shadowConfiguration.blur {
-            shadingView = UIVisualEffectView(effect: UIBlurEffect(style: blur))
-        }
-
-        shadingView.backgroundColor = configuration.shadowConfiguration.backgroundColor
-        containerView.addSubview(shadingView)
-        shadingView.frame = containerView.bounds
-
-        let tapGesture = UITapGestureRecognizer()
-        shadingView.addGestureRecognizer(tapGesture)
-
-        tapGesture.addTarget(self, action: #selector(handleShadingViewTapGesture))
-
-        self.shadingView = shadingView
+        containerView.frame = targetFrameForPresentedView()
+        presentedView.frame = containerView.bounds
+        updatePresentedViewSize()
     }
 
     @objc
-    private func handleShadingViewTapGesture() {
-        dismissIfPossible()
-    }
-
-    private func removeSubviews() {
-        shadingView?.removeFromSuperview()
-        shadingView = nil
-        pullBar?.removeFromSuperview()
-        pullBar = nil
+    private func orientationDidChange() {
+        // Update configuration if necessary
+        if UIDevice.current.orientation.isLandscape {
+            configuration.bottomSheetOrientation = .landscape
+        } else {
+            configuration.bottomSheetOrientation = .portrait
+        }
+        updatePresentedViewSize()
     }
 
     private func targetFrameForPresentedView() -> CGRect {
@@ -323,35 +296,46 @@ public final class BottomSheetPresentationController: UIPresentationController {
             return .zero
         }
 
+        let containerWidth = containerView.bounds.width
+
         let windowInsets = presentedView?.window?.safeAreaInsets ?? cachedInsets
-
         let preferredHeight = presentedViewController.preferredContentSize.height + windowInsets.bottom
-        var maxHeight = containerView.bounds.height - windowInsets.top
-        if case .visible(let appearance) = configuration.pullBarConfiguration {
-            maxHeight -= appearance.height
-        }
-        let height = min(preferredHeight, maxHeight)
 
-        return .init(
-            x: 0,
-            y: (containerView.bounds.height - height).pixelCeiled,
-            width: containerView.bounds.width,
+        let width: CGFloat = containerWidth
+        let height: CGFloat
+
+        height = min(preferredHeight, UIScreen.main.bounds.height)
+
+        let xPosition = (containerWidth - width) / 2
+        let yPosition = UIScreen.main.bounds.height - height
+
+        print("Calculated X Position: \(xPosition.pixelCeiled)")
+        print("Calculated Y Position: \(yPosition.pixelCeiled)")
+
+        return CGRect(
+            x: xPosition.pixelCeiled,
+            y: yPosition.pixelCeiled,
+            width: width.pixelCeiled,
             height: height.pixelCeiled
         )
     }
 
-    private func updatePresentedViewSize() {
-        guard let presentedView = presentedView else {
+    private func updatePresentedViewSize(animated: Bool = true) {
+        guard let presentedView = presentedView, let containerView = containerView else {
             return
         }
 
-        let oldFrame = presentedView.frame
         let targetFrame = targetFrameForPresentedView()
-        if !oldFrame.isAlmostEqual(to: targetFrame) {
-            presentedView.frame = targetFrame
-            if case .visible(let appearance) = configuration.pullBarConfiguration {
-                pullBar?.frame.origin.y = presentedView.frame.minY - appearance.height + pixelSize
-            }
+
+        if animated {
+            UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseInOut, animations: {
+                containerView.frame = targetFrame
+                presentedView.frame = containerView.bounds
+                containerView.layoutIfNeeded()
+            }, completion: nil)
+        } else {
+            containerView.frame = targetFrame
+            presentedView.frame = containerView.bounds
         }
     }
 
@@ -369,6 +353,24 @@ public final class BottomSheetPresentationController: UIPresentationController {
 
 extension BottomSheetPresentationController: UIScrollViewDelegate {
     public func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        // Check if gestureInterceptView is present
+        guard let interceptView = configuration.gestureInterceptView else {
+            defaultScrollHandling(scrollView)
+            return
+        }
+
+        // Check if the gesture is inside the interceptView
+        let touchPoint = scrollView.panGestureRecognizer.location(in: interceptView)
+        if interceptView.bounds.contains(touchPoint) {
+            // Allow interceptView to handle the gesture
+            return
+        }
+
+        // Handle the default scroll behavior
+        defaultScrollHandling(scrollView)
+    }
+
+    private func defaultScrollHandling(_ scrollView: UIScrollView) {
         if
             !scrollView.isContentOriginInBounds,
             scrollView.contentSize.height.isAlmostEqual(to: scrollView.frame.height - scrollView.adjustedContentInset.verticalInsets)
@@ -376,7 +378,6 @@ extension BottomSheetPresentationController: UIScrollViewDelegate {
             scrollView.bounds.origin.y = -scrollView.adjustedContentInset.top
         }
 
-        // We don't want bounces inside bottom sheet
         let previousTranslation = scrollViewTranslation
         scrollViewTranslation = scrollView.panGestureRecognizer.translation(in: scrollView).y
 
@@ -384,10 +385,7 @@ extension BottomSheetPresentationController: UIScrollViewDelegate {
         if didStartDragging {
             startInteractiveTransitionIfNeeded()
             overlayTranslation += scrollViewTranslation - previousTranslation
-
-            // Update scrollView contentInset without invoking scrollViewDidScroll(_:)
             scrollView.bounds.origin.y = -scrollView.adjustedContentInset.top
-
             updateInteractionControllerProgress(verticalTranslation: overlayTranslation)
         } else {
             lastContentOffsetBeforeDragging = scrollView.panGestureRecognizer.translation(in: scrollView)
@@ -468,7 +466,15 @@ extension BottomSheetPresentationController: UIGestureRecognizerDelegate {
     }
 
     public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-        !isNavigationTransitionInProgress
+        if let interceptView = configuration.gestureInterceptView {
+            let touchLocation = touch.location(in: interceptView)
+
+            if interceptView.bounds.contains(touchLocation) {
+                return false
+            }
+        }
+
+        return !isNavigationTransitionInProgress
     }
 }
 
@@ -519,50 +525,39 @@ extension BottomSheetPresentationController: UIViewControllerAnimatedTransitioni
         let isPresenting = destinationViewController.isBeingPresented
         let presentedView = isPresenting ? destinationView : sourceView
         let containerView = transitionContext.containerView
+
         if isPresenting {
             containerView.addSubview(destinationView)
-
-            destinationView.frame = containerView.bounds
         }
 
         sourceView.layoutIfNeeded()
         destinationView.layoutIfNeeded()
 
-        let frameInContainer = frameOfPresentedViewInContainerView
+        let finalFrame = targetFrameForPresentedView()
         let offscreenFrame = CGRect(
-            origin: CGPoint(
-                x: 0,
-                y: containerView.bounds.height
-            ),
-            size: sourceView.frame.size
+            origin: CGPoint(x: finalFrame.origin.x, y: containerView.frame.height),
+            size: finalFrame.size
         )
 
-        let updatePullBarFrame = {
-            guard case .visible(let appearnce) = self.configuration.pullBarConfiguration else { return }
-
-            self.pullBar?.frame.origin.y = presentedView.frame.minY - appearnce.height + pixelSize
+        if isPresenting {
+            presentedView.frame = offscreenFrame
         }
-
-        presentedView.frame = isPresenting ? offscreenFrame : frameInContainer
-        updatePullBarFrame()
-        shadingView?.alpha = isPresenting ? 0 : 1
 
         applyStyle()
 
         let animations = {
-            presentedView.frame = isPresenting ? frameInContainer : offscreenFrame
-            updatePullBarFrame()
-            self.shadingView?.alpha = isPresenting ? 1 : 0
+            if isPresenting {
+                presentedView.frame = finalFrame
+            } else {
+                presentedView.frame = offscreenFrame
+            }
         }
 
         let completion = { (completed: Bool) in
-            transitionContext.completeTransition(completed && !transitionContext.transitionWasCancelled)
-            // For fix bug: https://openradar.appspot.com/FB9075949
-            if #available(iOS 13, *), transitionContext.transitionWasCancelled {
-                let sourceViewFrame = sourceView.frame
-                sourceView.frame = .zero
-                sourceView.frame = sourceViewFrame
+            if !isPresenting, completed, !transitionContext.transitionWasCancelled {
+                presentedView.removeFromSuperview()
             }
+            transitionContext.completeTransition(completed && !transitionContext.transitionWasCancelled)
         }
 
         let options: UIView.AnimationOptions = transitionContext.isInteractive ? .curveLinear : .curveEaseInOut

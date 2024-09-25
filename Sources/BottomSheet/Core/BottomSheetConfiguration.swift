@@ -9,50 +9,30 @@
 import UIKit
 
 public struct BottomSheetConfiguration {
-    public enum PullBarConfiguration {
-        public struct PullBarAppearance {
-            public let height: CGFloat
-
-            public init(height: CGFloat) {
-                self.height = height
-            }
-        }
-
-        case hidden
-        case visible(PullBarAppearance)
-
-        public static let `default`: PullBarConfiguration = .visible(PullBarAppearance(height: 20))
+    public enum BottomSheetOrientation {
+        case portrait
+        case landscape
+        public static let `default`: BottomSheetOrientation = .portrait
     }
 
-    public struct ShadowConfiguration {
-        public let backgroundColor: UIColor
-        public let blur: UIBlurEffect.Style?
-
-        public init(backgroundColor: UIColor, blur: UIBlurEffect.Style? = nil) {
-            self.backgroundColor = backgroundColor
-            self.blur = blur
-        }
-
-        public static let `default` = ShadowConfiguration(backgroundColor: UIColor.black.withAlphaComponent(0.6))
-    }
-
+    public let gestureInterceptView: UIView?
     public let cornerRadius: CGFloat
-    public let pullBarConfiguration: PullBarConfiguration
-    public let shadowConfiguration: ShadowConfiguration
+    public var bottomSheetOrientation: BottomSheetOrientation?
 
     public init(
         cornerRadius: CGFloat,
-        pullBarConfiguration: PullBarConfiguration,
-        shadowConfiguration: ShadowConfiguration
+        bottomSheetOrientation: BottomSheetOrientation?,
+        gestureInterceptView: UIView? = nil
+
     ) {
         self.cornerRadius = cornerRadius
-        self.pullBarConfiguration = pullBarConfiguration
-        self.shadowConfiguration = shadowConfiguration
+        self.bottomSheetOrientation = bottomSheetOrientation
+        self.gestureInterceptView = gestureInterceptView
     }
 
     public static let `default` = BottomSheetConfiguration(
         cornerRadius: 10,
-        pullBarConfiguration: .default,
-        shadowConfiguration: .default
+        bottomSheetOrientation: nil,
+        gestureInterceptView: nil
     )
 }
