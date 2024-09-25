@@ -17,11 +17,11 @@ public struct BottomSheetConfiguration {
 
     public let gestureInterceptView: UIView?
     public let cornerRadius: CGFloat
-    public var bottomSheetOrientation: BottomSheetOrientation?
+    public let bottomSheetOrientation: BottomSheetOrientation
 
     public init(
         cornerRadius: CGFloat,
-        bottomSheetOrientation: BottomSheetOrientation?,
+        bottomSheetOrientation: BottomSheetOrientation,
         gestureInterceptView: UIView? = nil
 
     ) {
@@ -32,7 +32,7 @@ public struct BottomSheetConfiguration {
 
     public static let `default` = BottomSheetConfiguration(
         cornerRadius: 10,
-        bottomSheetOrientation: nil,
+        bottomSheetOrientation: .portrait,
         gestureInterceptView: nil
     )
 }
