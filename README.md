@@ -35,7 +35,7 @@ source 'https://github.com/CocoaPods/Specs.git'
 use_frameworks!
 
 target '<Your Target Name>' do
-    pod 'BottomSheet', :git => 'https://github.com/InteractiveDrawer/InteractiveDrawer'
+    pod 'BottomSheet', :git => 'https://github.com/MinlyInc/InteractiveDrawer'
 end
 ```
 
