@@ -12,17 +12,16 @@ public struct BottomSheetConfiguration {
     public enum BottomSheetOrientation {
         case portrait
         case landscape
-
         public static let `default`: BottomSheetOrientation = .portrait
     }
 
     public let gestureInterceptView: UIView?
     public let cornerRadius: CGFloat
-    public var bottomSheetOrientation: BottomSheetOrientation
+    public var bottomSheetOrientation: BottomSheetOrientation?
 
     public init(
         cornerRadius: CGFloat,
-        bottomSheetOrientation: BottomSheetOrientation,
+        bottomSheetOrientation: BottomSheetOrientation?,
         gestureInterceptView: UIView? = nil
 
     ) {
@@ -33,7 +32,7 @@ public struct BottomSheetConfiguration {
 
     public static let `default` = BottomSheetConfiguration(
         cornerRadius: 10,
-        bottomSheetOrientation: .portrait,
+        bottomSheetOrientation: nil,
         gestureInterceptView: nil
     )
 }

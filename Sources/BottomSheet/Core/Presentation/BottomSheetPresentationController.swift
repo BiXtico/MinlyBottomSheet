@@ -76,16 +76,20 @@ public final class BottomSheetPresentationController: UIPresentationController {
         self.dismissalHandler = dismissalHandler
         self.configuration = configuration
         super.init(presentedViewController: presentedViewController, presenting: presentingViewController)
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(orientationDidChange),
-            name: UIDevice.orientationDidChangeNotification,
-            object: nil
-        )
+        if configuration.bottomSheetOrientation != nil {
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(orientationDidChange),
+                name: UIDevice.orientationDidChangeNotification,
+                object: nil
+            )
+        }
     }
 
     deinit {
-        NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
+        if configuration.bottomSheetOrientation != nil {
+            NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
+        }
     }
 
     // MARK: - Setup
@@ -273,7 +277,7 @@ public final class BottomSheetPresentationController: UIPresentationController {
 
         containerView.frame = targetFrameForPresentedView()
         presentedView.frame = containerView.bounds
-//        updatePresentedViewSize()
+        updatePresentedViewSize()
     }
 
     @objc
@@ -327,24 +331,11 @@ public final class BottomSheetPresentationController: UIPresentationController {
             UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseInOut, animations: {
                 containerView.frame = targetFrame
                 presentedView.frame = containerView.bounds
-                self.updatePresentedViewTransform()
                 containerView.layoutIfNeeded()
             }, completion: nil)
         } else {
             containerView.frame = targetFrame
             presentedView.frame = containerView.bounds
-            updatePresentedViewTransform()
-        }
-    }
-
-    private func updatePresentedViewTransform() {
-        guard let presentedView = presentedView else { return }
-
-        switch configuration.bottomSheetOrientation {
-        case .portrait:
-            presentedView.transform = .identity
-        case .landscape:
-            presentedView.transform = CGAffineTransform(rotationAngle: .pi / 2)
         }
     }
 
