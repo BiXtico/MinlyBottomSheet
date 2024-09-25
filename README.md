@@ -60,8 +60,8 @@ presentBottomSheet(
     viewController: viewControllerToPresent,
     configuration: BottomSheetConfiguration(
         cornerRadius: 10,
-        pullBarConfiguration: .visible(.init(height: 20)),
-        shadowConfiguration: .init(backgroundColor: UIColor.black.withAlphaComponent(0.6))
+        bottomSheetOrientation: .portrait,
+        gestureInterceptView: viewController.gestureInterceptorView
     ),
     canBeDismissed: {
         // return `true` or `false` based on your business logic
@@ -72,7 +72,3 @@ presentBottomSheet(
     }
 )
 ```
-
-## Resources
-
-Read the [article on Medium](https://medium.com/me/stats/post/400515255829) for betting understanding of how it works under the hood
