@@ -1,4 +1,4 @@
-# Interactive Bottom Sheet (Variation of [joomcode-BottomSheet](https://github.com/joomcode/BottomSheet)
+# Interactive Bottom Sheet (Variation of [joomcode-BottomSheet](https://github.com/joomcode/BottomSheet))
 
 Bottom Sheet component is designed to handle content while allowing interaction in rootView (similar to IOS sheet)
 - ✅ pass it a controller view and it will present it in a drawer with these configurations:
