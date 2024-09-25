@@ -13,12 +13,6 @@ public protocol ScrollableBottomSheetPresentedController: AnyObject {
     var scrollView: UIScrollView? { get }
 }
 
-public enum BottomSheetOrientation {
-    case portrait
-    case landscape
-    public static let `default`: BottomSheetOrientation = .portrait
-}
-
 public final class BottomSheetPresentationController: UIPresentationController {
     // MARK: - Nested
 
@@ -38,7 +32,6 @@ public final class BottomSheetPresentationController: UIPresentationController {
     // MARK: - Private properties
 
     private var state: State = .dismissed
-    private var bottomSheetOrientation: BottomSheetOrientation = .default
     private var isInteractiveTransitionCanBeHandled: Bool {
         isDragging && !isNavigationTransitionInProgress
     }
@@ -82,20 +75,20 @@ public final class BottomSheetPresentationController: UIPresentationController {
         self.dismissalHandler = dismissalHandler
         self.configuration = configuration
         super.init(presentedViewController: presentedViewController, presenting: presentingViewController)
-        if configuration.responsiveness == .responsive {
-            NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(orientationDidChange),
-                name: UIDevice.orientationDidChangeNotification,
-                object: nil
-            )
-        }
+//        if configuration.responsiveness == .responsive {
+//            NotificationCenter.default.addObserver(
+//                self,
+//                selector: #selector(orientationDidChange),
+//                name: UIDevice.orientationDidChangeNotification,
+//                object: nil
+//            )
+//        }
     }
 
     deinit {
-        if configuration.responsiveness == .responsive {
-            NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
-        }
+//        if configuration.responsiveness == .responsive {
+//            NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
+//        }
     }
 
     // MARK: - Setup
@@ -278,13 +271,7 @@ public final class BottomSheetPresentationController: UIPresentationController {
 
     public override func containerViewDidLayoutSubviews() {
         super.containerViewDidLayoutSubviews()
-        if configuration.responsiveness == .responsive {
-            if UIDevice.current.orientation.isLandscape {
-                bottomSheetOrientation = .landscape
-            } else {
-                bottomSheetOrientation = .portrait
-            }
-        }
+
         guard let containerView = containerView, let presentedView = presentedView else { return }
 
         containerView.frame = targetFrameForPresentedView()
@@ -292,16 +279,16 @@ public final class BottomSheetPresentationController: UIPresentationController {
         updatePresentedViewSize()
     }
 
-    @objc
-    private func orientationDidChange() {
-        // Update configuration if necessary
-        if UIDevice.current.orientation.isLandscape {
-            bottomSheetOrientation = .landscape
-        } else {
-            bottomSheetOrientation = .portrait
-        }
-        updatePresentedViewSize()
-    }
+//    @objc
+//    private func orientationDidChange() {
+//        // Update configuration if necessary
+//        if UIDevice.current.orientation.isLandscape {
+//            bottomSheetOrientation = .landscape
+//        } else {
+//            bottomSheetOrientation = .portrait
+//        }
+//        updatePresentedViewSize()
+//    }
 
     private func targetFrameForPresentedView() -> CGRect {
         guard let containerView = containerView else {
@@ -318,7 +305,7 @@ public final class BottomSheetPresentationController: UIPresentationController {
         let xPosition: CGFloat
         let yPosition: CGFloat
 
-        if bottomSheetOrientation == .portrait {
+        if configuration.bottomSheetOrientation == .portrait {
             width = containerWidth
             height = min(preferredHeight, UIScreen.main.bounds.height)
             xPosition = (containerWidth - width) / 2
