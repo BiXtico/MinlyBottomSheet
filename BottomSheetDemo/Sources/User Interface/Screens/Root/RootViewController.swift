@@ -126,7 +126,7 @@ final class RootViewController: UIViewController {
         let viewController = ResizeViewController(initialHeight: 300, initialWidth: 300)
         presentBottomSheetInsideNavigationController(
             viewController: viewController,
-            configuration: .init(cornerRadius: 20, bottomSheetOrientation: .portrait),
+            configuration: .init(cornerRadius: 20, bottomSheetOrientation: .landscape),
             canBeDismissed: {
                 // return `true` or `false` based on your business logic
                 true

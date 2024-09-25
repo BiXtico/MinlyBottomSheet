@@ -58,8 +58,6 @@ public final class BottomSheetPresentationController: UIPresentationController {
 
     private var interactionController: UIPercentDrivenInteractiveTransition?
 
-    public var pullBar: PullBar?
-
     private weak var trackedScrollView: UIScrollView?
 
     private var cachedInsets: UIEdgeInsets = .zero
@@ -94,7 +92,6 @@ public final class BottomSheetPresentationController: UIPresentationController {
 
     private func setupGesturesForPresentedView() {
         setupPanGesture(for: presentedView)
-        setupPanGesture(for: pullBar)
     }
 
     private func setupPanGesture(for view: UIView?) {
@@ -548,7 +545,7 @@ extension BottomSheetPresentationController: UIViewControllerAnimatedTransitioni
         }
 
         let completion = { (completed: Bool) in
-            if !isPresenting {
+            if !isPresenting, completed, !transitionContext.transitionWasCancelled {
                 presentedView.removeFromSuperview()
             }
             transitionContext.completeTransition(completed && !transitionContext.transitionWasCancelled)

@@ -162,9 +162,9 @@ final class ResizeViewController: UIViewController {
     // MARK: - Private methods
 
     private func updatePreferredContentSize() {
-        _scrollView.contentSize = CGSize(width: currentWidth, height: currentHeight)
+//        _scrollView.contentSize = CGSize(width: currentWidth, height: currentHeight)
         contentSizeLabel.text = "preferredContentHeight = \(currentHeight)"
-        preferredContentSize = _scrollView.contentSize
+        preferredContentSize = CGSize(width: currentWidth, height: currentHeight)
     }
 
     private func updateContentHeight(newValue: CGFloat, width: CGFloat) {
