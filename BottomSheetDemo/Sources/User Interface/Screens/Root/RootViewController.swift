@@ -126,7 +126,7 @@ final class RootViewController: UIViewController {
         let viewController = ResizeViewController(initialHeight: 300, initialWidth: 300)
         presentBottomSheet(
             viewController: viewController,
-            configuration: .init(cornerRadius: 20, bottomSheetOrientation: .portrait, gestureInterceptView: viewController.gestureInterceptorView),
+            configuration: .init(cornerRadius: 20, bottomSheetOrientation: .responsive, gestureInterceptView: viewController.gestureInterceptorView),
             canBeDismissed: {
                 // return `true` or `false` based on your business logic
                 true

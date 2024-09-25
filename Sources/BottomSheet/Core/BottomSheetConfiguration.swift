@@ -9,30 +9,30 @@
 import UIKit
 
 public struct BottomSheetConfiguration {
-    public enum BottomSheetOrientation {
-        case portrait
-        case landscape
-        public static let `default`: BottomSheetOrientation = .portrait
+    public enum Responsiveness {
+        case responsive
+        case nonReponsive
+        public static let `default`: Responsiveness = .nonReponsive
     }
 
     public let gestureInterceptView: UIView?
     public let cornerRadius: CGFloat
-    public var bottomSheetOrientation: BottomSheetOrientation?
+    public var responsiveness: Responsiveness
 
     public init(
         cornerRadius: CGFloat,
-        bottomSheetOrientation: BottomSheetOrientation?,
+        bottomSheetOrientation: Responsiveness,
         gestureInterceptView: UIView? = nil
 
     ) {
         self.cornerRadius = cornerRadius
-        self.bottomSheetOrientation = bottomSheetOrientation
+        self.responsiveness = bottomSheetOrientation
         self.gestureInterceptView = gestureInterceptView
     }
 
     public static let `default` = BottomSheetConfiguration(
         cornerRadius: 10,
-        bottomSheetOrientation: nil,
+        bottomSheetOrientation: .nonReponsive,
         gestureInterceptView: nil
     )
 }
