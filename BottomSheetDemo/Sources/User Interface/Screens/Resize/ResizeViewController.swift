@@ -9,13 +9,19 @@
 import BottomSheet
 import UIKit
 
-final class ResizeViewController: UIViewController {
+final class ResizeViewController: UIViewController, UIGestureRecognizerDelegate {
     // MARK: - Subviews
 
     private let contentSizeLabel: UILabel = {
         let label = UILabel()
         label.textAlignment = .center
         return label
+    }()
+
+    public let gestureInterceptorView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .lightGray.withAlphaComponent(0.5) // A distinct color for the intercept view
+        return view
     }()
 
     var isShowNextButtonHidden: Bool {
@@ -128,11 +134,31 @@ final class ResizeViewController: UIViewController {
             $0.height.equalTo(44)
         }
 
+        // Adding the gestureInterceptorView right below the stackView
+        _scrollView.addSubview(gestureInterceptorView)
+        gestureInterceptorView.snp.makeConstraints {
+            $0.top.equalTo(stackView.snp.bottom).offset(8)
+            $0.leading.trailing.equalToSuperview().inset(16)
+            $0.height.equalTo(100) // Set an appropriate height
+        }
+
+        // Set up gesture recognizers
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTapGesture))
+        gestureInterceptorView.addGestureRecognizer(tapGesture)
+
+        let swipeLeftGesture = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipeGesture))
+        swipeLeftGesture.direction = .left
+        gestureInterceptorView.addGestureRecognizer(swipeLeftGesture)
+
+        let swipeRightGesture = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipeGesture))
+        swipeRightGesture.direction = .right
+        gestureInterceptorView.addGestureRecognizer(swipeRightGesture)
+
         if !isShowNextButtonHidden {
             _scrollView.addSubview(showNextButton)
             showNextButton.addTarget(self, action: #selector(handleShowNext), for: .touchUpInside)
             showNextButton.snp.makeConstraints {
-                $0.top.equalTo(stackView.snp.bottom).offset(8)
+                $0.top.equalTo(gestureInterceptorView.snp.bottom).offset(8)
                 $0.centerX.equalTo(stackView)
                 $0.width.equalTo(300)
                 $0.height.equalTo(50)
@@ -143,7 +169,7 @@ final class ResizeViewController: UIViewController {
             _scrollView.addSubview(showRootButton)
             showRootButton.addTarget(self, action: #selector(handleShowRoot), for: .touchUpInside)
             showRootButton.snp.makeConstraints {
-                $0.top.equalTo(isShowNextButtonHidden ? stackView.snp.bottom : showNextButton.snp.bottom).offset(8)
+                $0.top.equalTo(isShowNextButtonHidden ? gestureInterceptorView.snp.bottom : showNextButton.snp.bottom).offset(8)
                 $0.centerX.equalTo(stackView)
                 $0.width.equalTo(300)
                 $0.height.equalTo(50)
@@ -157,6 +183,23 @@ final class ResizeViewController: UIViewController {
 
     override var shouldAutorotate: Bool {
         true // Allow rotation
+    }
+
+    @objc
+    private func handleTapGesture(_ gesture: UITapGestureRecognizer) {
+        print("Tap gesture detected")
+    }
+
+    @objc
+    private func handleSwipeGesture(_ gesture: UISwipeGestureRecognizer) {
+        switch gesture.direction {
+        case .left:
+            print("Swipe left gesture detected")
+        case .right:
+            print("Swipe right gesture detected")
+        default:
+            break
+        }
     }
 
     // MARK: - Private methods

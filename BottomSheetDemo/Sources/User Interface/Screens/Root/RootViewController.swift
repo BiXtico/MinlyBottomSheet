@@ -110,7 +110,7 @@ final class RootViewController: UIViewController {
 
     @objc
     func orientationDidChange() {
-        if let presentedViewController = presentedViewController?.presentedViewController as? BottomSheetPresentationController {}
+        if presentedViewController?.presentedViewController is BottomSheetPresentationController {}
     }
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
@@ -126,7 +126,7 @@ final class RootViewController: UIViewController {
         let viewController = ResizeViewController(initialHeight: 300, initialWidth: 300)
         presentBottomSheet(
             viewController: viewController,
-            configuration: .init(cornerRadius: 20, bottomSheetOrientation: .landscape),
+            configuration: .init(cornerRadius: 20, bottomSheetOrientation: .portrait, gestureInterceptView: viewController.gestureInterceptorView),
             canBeDismissed: {
                 // return `true` or `false` based on your business logic
                 true

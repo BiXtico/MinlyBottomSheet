@@ -226,7 +226,7 @@ public final class BottomSheetPresentationController: UIPresentationController {
         }
 
         let deceleration = 800.0 * (verticalVelocity > 0 ? -1.0 : 1.0)
-        let finalProgress = (verticalTranslation - 0.5 * verticalVelocity * verticalVelocity / CGFloat(deceleration))
+        let finalProgress = (verticalTranslation - 0.25 * verticalVelocity * verticalVelocity / CGFloat(deceleration))
             / presentedView.bounds.height
         let isThresholdPassed = finalProgress < 0.5
 
@@ -266,11 +266,6 @@ public final class BottomSheetPresentationController: UIPresentationController {
         assertionFailure()
     }
 
-    @objc
-    private func handleShadingViewTapGesture() {
-        dismissIfPossible()
-    }
-
     public override func containerViewDidLayoutSubviews() {
         super.containerViewDidLayoutSubviews()
 
@@ -278,6 +273,7 @@ public final class BottomSheetPresentationController: UIPresentationController {
 
         containerView.frame = targetFrameForPresentedView()
         presentedView.frame = containerView.bounds
+//        updatePresentedViewSize()
     }
 
     @objc
@@ -293,7 +289,7 @@ public final class BottomSheetPresentationController: UIPresentationController {
 
     private func targetFrameForPresentedView() -> CGRect {
         guard let containerView = containerView else {
-            return .zero // Return zero if containerView is not available
+            return .zero
         }
 
         let containerWidth = containerView.bounds.width
@@ -366,6 +362,24 @@ public final class BottomSheetPresentationController: UIPresentationController {
 
 extension BottomSheetPresentationController: UIScrollViewDelegate {
     public func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        // Check if gestureInterceptView is present
+        guard let interceptView = configuration.gestureInterceptView else {
+            defaultScrollHandling(scrollView)
+            return
+        }
+
+        // Check if the gesture is inside the interceptView
+        let touchPoint = scrollView.panGestureRecognizer.location(in: interceptView)
+        if interceptView.bounds.contains(touchPoint) {
+            // Allow interceptView to handle the gesture
+            return
+        }
+
+        // Handle the default scroll behavior
+        defaultScrollHandling(scrollView)
+    }
+
+    private func defaultScrollHandling(_ scrollView: UIScrollView) {
         if
             !scrollView.isContentOriginInBounds,
             scrollView.contentSize.height.isAlmostEqual(to: scrollView.frame.height - scrollView.adjustedContentInset.verticalInsets)
@@ -373,7 +387,6 @@ extension BottomSheetPresentationController: UIScrollViewDelegate {
             scrollView.bounds.origin.y = -scrollView.adjustedContentInset.top
         }
 
-        // We don't want bounces inside bottom sheet
         let previousTranslation = scrollViewTranslation
         scrollViewTranslation = scrollView.panGestureRecognizer.translation(in: scrollView).y
 
@@ -381,10 +394,7 @@ extension BottomSheetPresentationController: UIScrollViewDelegate {
         if didStartDragging {
             startInteractiveTransitionIfNeeded()
             overlayTranslation += scrollViewTranslation - previousTranslation
-
-            // Update scrollView contentInset without invoking scrollViewDidScroll(_:)
             scrollView.bounds.origin.y = -scrollView.adjustedContentInset.top
-
             updateInteractionControllerProgress(verticalTranslation: overlayTranslation)
         } else {
             lastContentOffsetBeforeDragging = scrollView.panGestureRecognizer.translation(in: scrollView)
@@ -465,7 +475,15 @@ extension BottomSheetPresentationController: UIGestureRecognizerDelegate {
     }
 
     public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-        !isNavigationTransitionInProgress
+        if let interceptView = configuration.gestureInterceptView {
+            let touchLocation = touch.location(in: interceptView)
+
+            if interceptView.bounds.contains(touchLocation) {
+                return false
+            }
+        }
+
+        return !isNavigationTransitionInProgress
     }
 }
 
