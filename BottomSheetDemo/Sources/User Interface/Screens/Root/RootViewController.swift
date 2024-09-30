@@ -100,28 +100,28 @@ final class RootViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        NotificationCenter.default.addObserver(self, selector: #selector(orientationDidChange), name: UIDevice.orientationDidChangeNotification, object: nil)
+//        NotificationCenter.default.addObserver(self, selector: #selector(orientationDidChange), name: UIDevice.orientationDidChangeNotification, object: nil)
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
+//        NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
     }
 
-    @objc
-    func orientationDidChange() {
-        if let presentedVC = presentedViewController {
-            presentedVC.dismiss(animated: false) {
-                let viewController = ResizeViewController(initialHeight: 300, initialWidth: 300)
-                self.presentBottomSheet(
-                    viewController: viewController,
-                    configuration: .init(cornerRadius: 20, bottomSheetOrientation: UIDevice.current.orientation.isLandscape ? .landscape : .portrait, gestureInterceptView: viewController.gestureInterceptorView),
-                    canBeDismissed: { true },
-                    dismissCompletion: nil
-                )
-            }
-        }
-    }
+//    @objc
+//    func orientationDidChange() {
+//        if let presentedVC = presentedViewController {
+//            presentedVC.dismiss(animated: false) {
+//                let viewController = ResizeViewController(initialHeight: 300, initialWidth: 300)
+//                self.presentBottomSheet(
+//                    viewController: viewController,
+//                    configuration: .init(cornerRadius: 20, bottomSheetOrientation: UIDevice.current.orientation.isLandscape ? .landscape : .portrait, gestureInterceptView: viewController.gestureInterceptorView),
+//                    canBeDismissed: { true },
+//                    dismissCompletion: nil
+//                )
+//            }
+//        }
+//    }
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
         .all // or specify .portrait, .landscapeLeft, etc.
@@ -136,7 +136,7 @@ final class RootViewController: UIViewController {
         let viewController = ResizeViewController(initialHeight: 300, initialWidth: 300)
         presentBottomSheet(
             viewController: viewController,
-            configuration: .init(cornerRadius: 20, bottomSheetOrientation: .portrait, gestureInterceptView: viewController.gestureInterceptorView),
+            configuration: .init(cornerRadius: 20, bottomSheetOrientation: .unknown),
             canBeDismissed: {
                 // return `true` or `false` based on your business logic
                 true

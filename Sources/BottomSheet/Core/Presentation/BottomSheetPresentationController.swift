@@ -54,9 +54,9 @@ public final class BottomSheetPresentationController: UIPresentationController {
     private var scrollViewTranslation: CGFloat = 0
     private var lastContentOffsetBeforeDragging: CGPoint = .zero
     private var didStartDragging = false
+    private var currentOrientation: BottomSheetConfiguration.BottomSheetOrientation
 
     private var interactionController: UIPercentDrivenInteractiveTransition?
-
     private weak var trackedScrollView: UIScrollView?
 
     private var cachedInsets: UIEdgeInsets = .zero
@@ -74,21 +74,18 @@ public final class BottomSheetPresentationController: UIPresentationController {
     ) {
         self.dismissalHandler = dismissalHandler
         self.configuration = configuration
+        self.currentOrientation = configuration.bottomSheetOrientation
         super.init(presentedViewController: presentedViewController, presenting: presentingViewController)
-//        if configuration.responsiveness == .responsive {
-//            NotificationCenter.default.addObserver(
-//                self,
-//                selector: #selector(orientationDidChange),
-//                name: UIDevice.orientationDidChangeNotification,
-//                object: nil
-//            )
-//        }
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(orientationDidChange),
+            name: UIDevice.orientationDidChangeNotification,
+            object: nil
+        )
     }
 
     deinit {
-//        if configuration.responsiveness == .responsive {
-//            NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
-//        }
+        NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
     }
 
     // MARK: - Setup
@@ -134,7 +131,6 @@ public final class BottomSheetPresentationController: UIPresentationController {
         if completed {
             setupGesturesForPresentedView()
             setupScrollTrackingIfNeeded()
-
             state = .presented
         } else {
             state = .dismissed
@@ -258,43 +254,45 @@ public final class BottomSheetPresentationController: UIPresentationController {
             assertionFailure()
             return
         }
-
         presentedViewController.view.clipsToBounds = true
-
         presentedViewController.view.layer.cornerRadius = configuration.cornerRadius
         presentedViewController.view.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
     }
 
-    private func addSubviews() {
-        assertionFailure()
+    @objc
+    private func orientationDidChange() {
+        if configuration.bottomSheetOrientation == .unknown {
+            setCurrentOrientation()
+            updatePresentedViewSize()
+        }
     }
 
-    public override func containerViewDidLayoutSubviews() {
-        super.containerViewDidLayoutSubviews()
-
-        guard let containerView = containerView, let presentedView = presentedView else { return }
-
-        containerView.frame = targetFrameForPresentedView()
-        presentedView.frame = containerView.bounds
-        updatePresentedViewSize()
+    private func setCurrentOrientation() {
+        let currentInterfaceOrientation = getCurrentInterfaceOrientation()
+        // Update configuration if necessary based on the interface orientation
+        if currentInterfaceOrientation.isLandscape {
+            currentOrientation = .landscape
+        } else {
+            currentOrientation = .portrait
+        }
     }
 
-//    @objc
-//    private func orientationDidChange() {
-//        // Update configuration if necessary
-//        if UIDevice.current.orientation.isLandscape {
-//            bottomSheetOrientation = .landscape
-//        } else {
-//            bottomSheetOrientation = .portrait
-//        }
-//        updatePresentedViewSize()
-//    }
+    private func getCurrentInterfaceOrientation() -> UIInterfaceOrientation {
+        if #available(iOS 13.0, *) {
+            if let windowScene = containerView?.window?.windowScene {
+                return windowScene.interfaceOrientation
+            }
+        }
+        return UIApplication.shared.statusBarOrientation
+    }
 
     private func targetFrameForPresentedView() -> CGRect {
         guard let containerView = containerView else {
             return .zero
         }
-
+        if configuration.bottomSheetOrientation == .unknown {
+            setCurrentOrientation()
+        }
         let containerWidth = containerView.bounds.width
         let containerHeight = containerView.bounds.height
         let windowInsets = presentedView?.window?.safeAreaInsets ?? cachedInsets
@@ -304,8 +302,7 @@ public final class BottomSheetPresentationController: UIPresentationController {
         let height: CGFloat
         let xPosition: CGFloat
         let yPosition: CGFloat
-
-        if configuration.bottomSheetOrientation == .portrait {
+        if currentOrientation == .portrait {
             width = containerWidth
             height = min(preferredHeight, UIScreen.main.bounds.height)
             xPosition = (containerWidth - width) / 2
@@ -329,7 +326,6 @@ public final class BottomSheetPresentationController: UIPresentationController {
         guard let presentedView = presentedView, let containerView = containerView else {
             return
         }
-
         let targetFrame = targetFrameForPresentedView()
         if animated {
             UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseInOut, animations: {
@@ -340,6 +336,15 @@ public final class BottomSheetPresentationController: UIPresentationController {
         } else {
             containerView.frame = targetFrame
             presentedView.frame = containerView.bounds
+            containerView.layoutIfNeeded()
+            presentedView.layoutIfNeeded()
+        }
+    }
+
+    public override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        coordinator.animate(alongsideTransition: nil) { _ in
+            self.updatePresentedViewSize()
         }
     }
 
@@ -357,20 +362,14 @@ public final class BottomSheetPresentationController: UIPresentationController {
 
 extension BottomSheetPresentationController: UIScrollViewDelegate {
     public func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        // Check if gestureInterceptView is present
         guard let interceptView = configuration.gestureInterceptView else {
             defaultScrollHandling(scrollView)
             return
         }
-
-        // Check if the gesture is inside the interceptView
         let touchPoint = scrollView.panGestureRecognizer.location(in: interceptView)
         if interceptView.bounds.contains(touchPoint) {
-            // Allow interceptView to handle the gesture
             return
         }
-
-        // Handle the default scroll behavior
         defaultScrollHandling(scrollView)
     }
 
@@ -536,7 +535,6 @@ extension BottomSheetPresentationController: UIViewControllerAnimatedTransitioni
 
         sourceView.layoutIfNeeded()
         destinationView.layoutIfNeeded()
-
         let finalFrame = targetFrameForPresentedView()
         let offscreenFrame = CGRect(
             origin: CGPoint(x: finalFrame.origin.x, y: containerView.frame.height),
