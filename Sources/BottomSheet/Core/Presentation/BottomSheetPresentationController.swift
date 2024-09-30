@@ -160,6 +160,12 @@ public final class BottomSheetPresentationController: UIPresentationController {
         targetFrameForPresentedView()
     }
 
+    public override func containerViewDidLayoutSubviews() {
+        super.containerViewDidLayoutSubviews()
+
+        updatePresentedViewSize(animated: true)
+    }
+
     public override func preferredContentSizeDidChange(forChildContentContainer container: UIContentContainer) {
         super.preferredContentSizeDidChange(forChildContentContainer: container)
         updatePresentedViewSize(animated: true)
@@ -327,6 +333,7 @@ public final class BottomSheetPresentationController: UIPresentationController {
             return
         }
         let targetFrame = targetFrameForPresentedView()
+
         if animated {
             UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseInOut, animations: {
                 containerView.frame = targetFrame
@@ -339,6 +346,7 @@ public final class BottomSheetPresentationController: UIPresentationController {
             containerView.layoutIfNeeded()
             presentedView.layoutIfNeeded()
         }
+        applyStyle()
     }
 
     public override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
