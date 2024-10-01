@@ -9,6 +9,12 @@
 import Combine
 import UIKit
 
+public enum BottomSheetOrientation {
+    case portrait
+    case landscape
+    public static let `default`: BottomSheetOrientation = .portrait
+}
+
 public protocol ScrollableBottomSheetPresentedController: AnyObject {
     var scrollView: UIScrollView? { get }
 }
@@ -54,7 +60,7 @@ public final class BottomSheetPresentationController: UIPresentationController {
     private var scrollViewTranslation: CGFloat = 0
     private var lastContentOffsetBeforeDragging: CGPoint = .zero
     private var didStartDragging = false
-    private var currentOrientation: BottomSheetConfiguration.BottomSheetOrientation
+    private var currentOrientation: BottomSheetOrientation = .default
 
     private var interactionController: UIPercentDrivenInteractiveTransition?
     private weak var trackedScrollView: UIScrollView?
@@ -74,7 +80,6 @@ public final class BottomSheetPresentationController: UIPresentationController {
     ) {
         self.dismissalHandler = dismissalHandler
         self.configuration = configuration
-        self.currentOrientation = configuration.bottomSheetOrientation
         super.init(presentedViewController: presentedViewController, presenting: presentingViewController)
         NotificationCenter.default.addObserver(
             self,
@@ -152,10 +157,6 @@ public final class BottomSheetPresentationController: UIPresentationController {
         }
     }
 
-    public override var shouldPresentInFullscreen: Bool {
-        true
-    }
-
     public override var frameOfPresentedViewInContainerView: CGRect {
         targetFrameForPresentedView()
     }
@@ -198,7 +199,6 @@ public final class BottomSheetPresentationController: UIPresentationController {
 
         presentedViewController.dismiss(animated: true) { [weak self] in
             guard let self = self else { return }
-
             if self.presentingViewController.presentedViewController !== self.presentedViewController {
                 self.dismissalHandler.performDismissal(animated: true)
             }
@@ -267,10 +267,8 @@ public final class BottomSheetPresentationController: UIPresentationController {
 
     @objc
     private func orientationDidChange() {
-        if configuration.bottomSheetOrientation == .unknown {
-            setCurrentOrientation()
-            updatePresentedViewSize()
-        }
+        setCurrentOrientation()
+        updatePresentedViewSize()
     }
 
     private func setCurrentOrientation() {
@@ -296,9 +294,7 @@ public final class BottomSheetPresentationController: UIPresentationController {
         guard let containerView = containerView else {
             return .zero
         }
-        if configuration.bottomSheetOrientation == .unknown {
-            setCurrentOrientation()
-        }
+        setCurrentOrientation()
         let containerWidth = containerView.bounds.width
         let containerHeight = containerView.bounds.height
         let windowInsets = presentedView?.window?.safeAreaInsets ?? cachedInsets

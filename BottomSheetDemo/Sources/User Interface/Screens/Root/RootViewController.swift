@@ -18,6 +18,8 @@ final class RootViewController: UIViewController {
         return button
     }()
 
+    var presentableController: ResizeViewController?
+
     init() {
         super.init(nibName: nil, bundle: nil)
     }
@@ -31,6 +33,29 @@ final class RootViewController: UIViewController {
         super.viewDidLoad()
 
         setupSubviews()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleOrientationChange),
+            name: UIDevice.orientationDidChangeNotification,
+            object: nil
+        )
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
+    }
+
+    private func getCurrentInterfaceOrientation() -> UIInterfaceOrientation {
+        if #available(iOS 13.0, *) {
+            // Use the current windowScene's interfaceOrientation
+            if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                return scene.interfaceOrientation
+            }
+            return .unknown
+        } else {
+            // Fallback on earlier versions
+            return UIApplication.shared.statusBarOrientation
+        }
     }
 
     private func setupSubviews() {
@@ -100,28 +125,66 @@ final class RootViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-//        NotificationCenter.default.addObserver(self, selector: #selector(orientationDidChange), name: UIDevice.orientationDidChangeNotification, object: nil)
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-//        NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
     }
 
-//    @objc
-//    func orientationDidChange() {
-//        if let presentedVC = presentedViewController {
-//            presentedVC.dismiss(animated: false) {
-//                let viewController = ResizeViewController(initialHeight: 300, initialWidth: 300)
+    @objc
+    private func handleOrientationChangeTest() {
+        // Fetch the current interface orientation more reliably
+        let currentOrientation = getCurrentInterfaceOrientation()
+
+        switch currentOrientation {
+        case .portrait:
+            print("Portrait")
+        // Handle portrait layout changes
+        case .landscapeLeft, .landscapeRight:
+            print("Landscape")
+        // Handle landscape layout changes
+        case .portraitUpsideDown:
+            print("Portrait Upside Down")
+        default:
+            print("Unknown Orientation")
+        }
+    }
+
+    @objc
+    private func handleOrientationChange() {
+        // Fetch the current interface orientation more reliably
+        let currentOrientation = getCurrentInterfaceOrientation()
+        print(currentOrientation)
+
+//        if presentableController != nil {
+//            presentableController?.dismiss(animated: false)
+//            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+//                self.presentableController = ResizeViewController(initialHeight: 300, initialWidth: 300)
+//                guard let strongViewController = self.presentableController else { return }
+//
+//                // Use the current orientation to determine the configuration or perform additional logic if needed
+//                let bottomSheetConfiguration: BottomSheetConfiguration
+//                switch currentOrientation {
+//                case .portrait:
+//                    print("Portrait")
+//                    bottomSheetConfiguration = .init(cornerRadius: 20, bottomSheetOrientation: .portrait, gestureInterceptView: strongViewController.gestureInterceptorView)
+//                case .landscapeLeft, .landscapeRight:
+//                    print("Landscape")
+//                    bottomSheetConfiguration = .init(cornerRadius: 20, bottomSheetOrientation: .landscape, gestureInterceptView: strongViewController.gestureInterceptorView)
+//                default:
+//                    bottomSheetConfiguration = .init(cornerRadius: 20, bottomSheetOrientation: .portrait, gestureInterceptView: strongViewController.gestureInterceptorView)
+//                }
 //                self.presentBottomSheet(
-//                    viewController: viewController,
-//                    configuration: .init(cornerRadius: 20, bottomSheetOrientation: UIDevice.current.orientation.isLandscape ? .landscape : .portrait, gestureInterceptView: viewController.gestureInterceptorView),
+//                    viewController: strongViewController,
+//                    configuration: bottomSheetConfiguration,
 //                    canBeDismissed: { true },
-//                    dismissCompletion: nil
+//                    dismissCompletion: {
+//                        self.presentableController = nil
+//                    }
 //                )
 //            }
 //        }
-//    }
+    }
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
         .all // or specify .portrait, .landscapeLeft, etc.
@@ -133,16 +196,19 @@ final class RootViewController: UIViewController {
 
     @objc
     private func handleShowBottomSheet() {
-        let viewController = ResizeViewController(initialHeight: 300, initialWidth: 300)
+        presentableController = ResizeViewController(initialHeight: 300, initialWidth: 300)
+        guard let strongViewController = presentableController else { return }
+        let currentOrientation = getCurrentInterfaceOrientation()
         presentBottomSheet(
-            viewController: viewController,
-            configuration: .init(cornerRadius: 20, bottomSheetOrientation: .unknown),
+            viewController: strongViewController,
+            configuration: .init(cornerRadius: 20),
+//            currentOrientation.isLandscape ? .landscape : .portrait
             canBeDismissed: {
                 // return `true` or `false` based on your business logic
                 true
             },
             dismissCompletion: {
-                // handle bottom sheet dismissal completion
+                self.presentableController = nil
             }
         )
     }
