@@ -33,16 +33,6 @@ final class RootViewController: UIViewController {
         super.viewDidLoad()
 
         setupSubviews()
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleOrientationChange),
-            name: UIDevice.orientationDidChangeNotification,
-            object: nil
-        )
-    }
-
-    deinit {
-        NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
     }
 
     private func getCurrentInterfaceOrientation() -> UIInterfaceOrientation {
@@ -51,11 +41,11 @@ final class RootViewController: UIViewController {
             if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
                 return scene.interfaceOrientation
             }
-            return .unknown
         } else {
             // Fallback on earlier versions
             return UIApplication.shared.statusBarOrientation
         }
+        return .unknown
     }
 
     private func setupSubviews() {
@@ -131,63 +121,58 @@ final class RootViewController: UIViewController {
         super.viewWillDisappear(animated)
     }
 
-    @objc
-    private func handleOrientationChangeTest() {
-        // Fetch the current interface orientation more reliably
-        let currentOrientation = getCurrentInterfaceOrientation()
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
 
-        switch currentOrientation {
-        case .portrait:
-            print("Portrait")
-        // Handle portrait layout changes
-        case .landscapeLeft, .landscapeRight:
-            print("Landscape")
-        // Handle landscape layout changes
-        case .portraitUpsideDown:
-            print("Portrait Upside Down")
-        default:
-            print("Unknown Orientation")
-        }
+        coordinator.animate(alongsideTransition: { context in
+            // Code to execute during the transition
+        }, completion: { context in
+            // Code to execute after the transition
+            self.handleOrientationChange() // Call your function here
+
+        })
     }
+
+//
+//    private func handleOrientationChangeTest() {
+//        // Fetch the current interface orientation more reliably
+//        let currentOrientation = getCurrentInterfaceOrientation()
+//
+//        switch currentOrientation {
+//        case .portrait:
+//            print("Portrait")
+//        // Handle portrait layout changes
+//        case .landscapeLeft, .landscapeRight:
+//            print("Landscape")
+//        // Handle landscape layout changes
+//        case .portraitUpsideDown:
+//            print("Portrait Upside Down")
+//        default:
+//            print("Unknown Orientation")
+//        }
+//    }
 
     @objc
     private func handleOrientationChange() {
-        // Fetch the current interface orientation more reliably
-        let currentOrientation = getCurrentInterfaceOrientation()
-        print(currentOrientation)
+        presentableController?.dismiss(animated: false)
 
-//        if presentableController != nil {
-//            presentableController?.dismiss(animated: false)
-//            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-//                self.presentableController = ResizeViewController(initialHeight: 300, initialWidth: 300)
-//                guard let strongViewController = self.presentableController else { return }
-//
-//                // Use the current orientation to determine the configuration or perform additional logic if needed
-//                let bottomSheetConfiguration: BottomSheetConfiguration
-//                switch currentOrientation {
-//                case .portrait:
-//                    print("Portrait")
-//                    bottomSheetConfiguration = .init(cornerRadius: 20, bottomSheetOrientation: .portrait, gestureInterceptView: strongViewController.gestureInterceptorView)
-//                case .landscapeLeft, .landscapeRight:
-//                    print("Landscape")
-//                    bottomSheetConfiguration = .init(cornerRadius: 20, bottomSheetOrientation: .landscape, gestureInterceptView: strongViewController.gestureInterceptorView)
-//                default:
-//                    bottomSheetConfiguration = .init(cornerRadius: 20, bottomSheetOrientation: .portrait, gestureInterceptView: strongViewController.gestureInterceptorView)
-//                }
-//                self.presentBottomSheet(
-//                    viewController: strongViewController,
-//                    configuration: bottomSheetConfiguration,
-//                    canBeDismissed: { true },
-//                    dismissCompletion: {
-//                        self.presentableController = nil
-//                    }
-//                )
-//            }
-//        }
+        guard let strongViewController = presentableController else { return }
+
+        // Use the current orientation to determine the configuration or perform additional logic if needed
+        let bottomSheetConfiguration: BottomSheetConfiguration = .init(cornerRadius: 20, gestureInterceptView: strongViewController.gestureInterceptorView)
+
+        presentBottomSheet(
+            viewController: strongViewController,
+            configuration: bottomSheetConfiguration,
+            canBeDismissed: { true },
+            dismissCompletion: {
+//                self.presentableController = nil
+            }
+        )
     }
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
-        .all // or specify .portrait, .landscapeLeft, etc.
+        .allButUpsideDown // or specify .portrait, .landscapeLeft, etc.
     }
 
     override var shouldAutorotate: Bool {
@@ -198,7 +183,6 @@ final class RootViewController: UIViewController {
     private func handleShowBottomSheet() {
         presentableController = ResizeViewController(initialHeight: 300, initialWidth: 300)
         guard let strongViewController = presentableController else { return }
-        let currentOrientation = getCurrentInterfaceOrientation()
         presentBottomSheet(
             viewController: strongViewController,
             configuration: .init(cornerRadius: 20),
@@ -208,7 +192,7 @@ final class RootViewController: UIViewController {
                 true
             },
             dismissCompletion: {
-                self.presentableController = nil
+//                self.presentableController = nil
             }
         )
     }
