@@ -11,6 +11,7 @@ import SnapKit
 import UIKit
 
 final class RootViewController: UIViewController {
+    private var drawerManager: DrawerManager!
     private let button: UIButton = {
         let button = UIButton()
         button.backgroundColor = .systemBlue
@@ -31,7 +32,7 @@ final class RootViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        drawerManager = DrawerManager(parentController: self)
         setupSubviews()
     }
 
@@ -152,23 +153,11 @@ final class RootViewController: UIViewController {
 //        }
 //    }
 
+    let bottomSheetConfiguration: BottomSheetConfiguration = .init(cornerRadius: 22, portraitSize: 300, landscapeSize: 300)
+
     @objc
     private func handleOrientationChange() {
-        presentableController?.dismiss(animated: false)
-
-        guard let strongViewController = presentableController else { return }
-
-        // Use the current orientation to determine the configuration or perform additional logic if needed
-        let bottomSheetConfiguration: BottomSheetConfiguration = .init(cornerRadius: 20, gestureInterceptView: strongViewController.gestureInterceptorView)
-
-        presentBottomSheet(
-            viewController: strongViewController,
-            configuration: bottomSheetConfiguration,
-            canBeDismissed: { true },
-            dismissCompletion: {
-//                self.presentableController = nil
-            }
-        )
+        drawerManager.orientationDidChange()
     }
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
@@ -183,16 +172,9 @@ final class RootViewController: UIViewController {
     private func handleShowBottomSheet() {
         presentableController = ResizeViewController(initialHeight: 300, initialWidth: 300)
         guard let strongViewController = presentableController else { return }
-        presentBottomSheet(
-            viewController: strongViewController,
-            configuration: .init(cornerRadius: 20),
-//            currentOrientation.isLandscape ? .landscape : .portrait
-            canBeDismissed: {
-                // return `true` or `false` based on your business logic
-                true
-            },
-            dismissCompletion: {
-//                self.presentableController = nil
+        drawerManager.presentDrawer(
+            from: self, viewController: strongViewController, configuration: bottomSheetConfiguration, dismissCompletion: {
+                self.presentableController = nil
             }
         )
     }

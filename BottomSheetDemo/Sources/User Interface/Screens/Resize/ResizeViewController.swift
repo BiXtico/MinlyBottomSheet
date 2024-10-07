@@ -207,7 +207,7 @@ final class ResizeViewController: UIViewController, UIGestureRecognizerDelegate 
     private func updatePreferredContentSize() {
 //        _scrollView.contentSize = CGSize(width: currentWidth, height: currentHeight)
         contentSizeLabel.text = "preferredContentHeight = \(currentHeight)"
-        preferredContentSize = CGSize(width: currentWidth, height: currentHeight)
+//        preferredContentSize = CGSize(width: currentWidth, height: currentHeight)
     }
 
     private func updateContentHeight(newValue: CGFloat, width: CGFloat) {

@@ -283,7 +283,7 @@ public final class BottomSheetPresentationController: UIPresentationController {
         let containerHeight = containerView.bounds.height
         let windowInsets = presentedView?.window?.safeAreaInsets ?? cachedInsets
         let preferredHeight = presentedViewController.preferredContentSize.height + windowInsets.bottom
-
+        let preferredWidth = presentedViewController.preferredContentSize.width + windowInsets.bottom
         let width: CGFloat
         let height: CGFloat
         let xPosition: CGFloat
@@ -294,7 +294,7 @@ public final class BottomSheetPresentationController: UIPresentationController {
             xPosition = 0
             yPosition = UIScreen.main.bounds.height - height
         } else {
-            width = min(preferredHeight, UIScreen.main.bounds.width)
+            width = min(preferredWidth, UIScreen.main.bounds.width)
             height = containerHeight
             xPosition = UIScreen.main.bounds.width - width
             yPosition = 0

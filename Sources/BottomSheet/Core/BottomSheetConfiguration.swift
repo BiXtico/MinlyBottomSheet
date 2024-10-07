@@ -8,21 +8,39 @@
 
 import UIKit
 
+public enum DrawerSize {
+    case half
+    case full
+}
+
+/// A struct representing the configuration for a bottom sheet.
 public struct BottomSheetConfiguration {
     public let gestureInterceptView: UIView?
-    public let cornerRadius: CGFloat
+    public var cornerRadius: CGFloat
+    public var portraitSize: CGFloat?
+    public var landscapeSize: CGFloat?
+    public var size: DrawerSize?
 
     public init(
-        cornerRadius: CGFloat,
-        gestureInterceptView: UIView? = nil
+        cornerRadius: CGFloat = 10,
+        gestureInterceptView: UIView? = nil,
+        portraitSize: CGFloat? = nil,
+        landscapeSize: CGFloat? = nil,
+        size: DrawerSize? = nil
 
     ) {
         self.cornerRadius = cornerRadius
         self.gestureInterceptView = gestureInterceptView
+        self.portraitSize = portraitSize
+        self.landscapeSize = landscapeSize
+        self.size = size
     }
 
     public static let `default` = BottomSheetConfiguration(
         cornerRadius: 10,
-        gestureInterceptView: nil
+        gestureInterceptView: nil,
+        portraitSize: 0,
+        landscapeSize: 0,
+        size: .half
     )
 }
