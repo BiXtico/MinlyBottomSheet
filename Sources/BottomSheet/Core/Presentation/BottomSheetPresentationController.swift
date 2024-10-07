@@ -81,16 +81,6 @@ public final class BottomSheetPresentationController: UIPresentationController {
         self.dismissalHandler = dismissalHandler
         self.configuration = configuration
         super.init(presentedViewController: presentedViewController, presenting: presentingViewController)
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(orientationDidChange),
-            name: UIDevice.orientationDidChangeNotification,
-            object: nil
-        )
-    }
-
-    deinit {
-        NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
     }
 
     // MARK: - Setup
@@ -265,12 +255,6 @@ public final class BottomSheetPresentationController: UIPresentationController {
         presentedViewController.view.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
     }
 
-    @objc
-    private func orientationDidChange() {
-        setCurrentOrientation()
-        updatePresentedViewSize()
-    }
-
     private func setCurrentOrientation() {
         let currentInterfaceOrientation = getCurrentInterfaceOrientation()
         // Update configuration if necessary based on the interface orientation
@@ -299,7 +283,7 @@ public final class BottomSheetPresentationController: UIPresentationController {
         let containerHeight = containerView.bounds.height
         let windowInsets = presentedView?.window?.safeAreaInsets ?? cachedInsets
         let preferredHeight = presentedViewController.preferredContentSize.height + windowInsets.bottom
-
+        let preferredWidth = presentedViewController.preferredContentSize.width + windowInsets.bottom
         let width: CGFloat
         let height: CGFloat
         let xPosition: CGFloat
@@ -307,13 +291,13 @@ public final class BottomSheetPresentationController: UIPresentationController {
         if currentOrientation == .portrait {
             width = containerWidth
             height = min(preferredHeight, UIScreen.main.bounds.height)
-            xPosition = (containerWidth - width) / 2
+            xPosition = 0
             yPosition = UIScreen.main.bounds.height - height
         } else {
-            width = min(preferredHeight, UIScreen.main.bounds.width)
+            width = min(preferredWidth, UIScreen.main.bounds.width)
             height = containerHeight
             xPosition = UIScreen.main.bounds.width - width
-            yPosition = (containerHeight - height) / 2
+            yPosition = 0
         }
 
         return CGRect(
@@ -555,7 +539,7 @@ extension BottomSheetPresentationController: UIViewControllerAnimatedTransitioni
             if isPresenting {
                 presentedView.frame = finalFrame
             } else {
-                presentedView.frame = offscreenFrame
+                presentedView.frame.origin.y = containerView.frame.height
             }
         }
 
