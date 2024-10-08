@@ -30,7 +30,7 @@ public class DrawerManager {
     private var openState: OpenState = .regular
     private var dismissCompletion: (() -> Void)?
     public weak var drawerStateDelegate: DrawerStateDelegate?
-    private var drawerState: DrawerState = .closed {
+    public var drawerState: DrawerState = .closed {
         didSet {
             drawerStateDelegate?.drawerStateDidChange(to: drawerState)
         }
@@ -46,7 +46,7 @@ public class DrawerManager {
     public func orientationDidChange() {
         guard let activeDrawer = activeDrawer else { return }
         openState = .orienationChanges
-
+        drawerState = .closed
         openDrawer(viewController: activeDrawer, configuration: currentConfiguration, dismissCompletion: dismissCompletion)
     }
 
