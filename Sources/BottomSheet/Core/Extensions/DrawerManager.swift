@@ -14,12 +14,27 @@ private enum OpenState {
     case regular
 }
 
+public enum DrawerState {
+    case opened
+    case closed
+}
+
+public protocol DrawerStateDelegate: AnyObject {
+    func drawerStateDidChange(to state: DrawerState)
+}
+
 public class DrawerManager {
     private weak var parentController: UIViewController?
     private var activeDrawer: UIViewController?
     private var currentConfiguration = BottomSheetConfiguration()
     private var openState: OpenState = .regular
     private var dismissCompletion: (() -> Void)?
+    public weak var drawerStateDelegate: DrawerStateDelegate?
+    private var drawerState: DrawerState = .closed {
+        didSet {
+            drawerStateDelegate?.drawerStateDidChange(to: drawerState)
+        }
+    }
 
     /// Initializes DrawerManager with a parent UIViewController
     public init(parentController: UIViewController) {
@@ -27,8 +42,7 @@ public class DrawerManager {
     }
 
     /// Handles changes in device orientation and updates the drawer accordingly.
-    /// If the drawer type is independent, it reopens the drawer with the new orientation.
-    /// - Note: This is triggered when the device orientation changes.
+    /// - Note: This should be triggered when the device orientation changes.
     public func orientationDidChange() {
         guard let activeDrawer = activeDrawer else { return }
         openState = .orienationChanges
@@ -57,12 +71,10 @@ public class DrawerManager {
             currentConfiguration.landscapeSize = calculatedLandscapeSize
         }
         if currentConfiguration.portraitSize == 0 {
-            let calculatedPortraitSize: CGFloat = size == .full ? screenHeight : screenHeight / 2
-            currentConfiguration.portraitSize = calculatedPortraitSize
+            currentConfiguration.portraitSize = screenHeight / 2
         }
         if currentConfiguration.landscapeSize == 0 {
-            let calculatedLandscapeSize: CGFloat = size == .full ? screenWidth : screenWidth / 2
-            currentConfiguration.landscapeSize = calculatedLandscapeSize
+            currentConfiguration.landscapeSize = screenWidth / 2
         }
     }
 
@@ -104,6 +116,7 @@ public class DrawerManager {
         closeActiveDrawer(animated: false, disposeDrawer: openState == .regular ? true : false)
         activeDrawer = viewController
         refreshSize(portraitSize: configuration.portraitSize, landscapeSize: configuration.landscapeSize)
+        drawerState = .opened
         parentController.presentBottomSheet(
             viewController: viewController,
             configuration: BottomSheetConfiguration(
@@ -135,17 +148,12 @@ public class DrawerManager {
 
         if let newPortraitSize = portraitSize {
             currentConfiguration.portraitSize = newPortraitSize
+            activeDrawer.preferredContentSize.height = currentConfiguration.portraitSize ?? UIScreen.main.bounds.height / 2
         }
 
         if let newLandscapeSize = landscapeSize {
             currentConfiguration.landscapeSize = newLandscapeSize
-        }
-
-        if portraitSize != nil || landscapeSize != nil {
-            activeDrawer.preferredContentSize = CGSize(
-                width: currentConfiguration.landscapeSize ?? UIScreen.main.bounds.width,
-                height: currentConfiguration.portraitSize ?? UIScreen.main.bounds.height
-            )
+            activeDrawer.preferredContentSize.width = currentConfiguration.landscapeSize ?? UIScreen.main.bounds.width / 2
         }
     }
 
@@ -154,6 +162,7 @@ public class DrawerManager {
         guard let activeDrawer = activeDrawer else { return }
         activeDrawer.dismiss(animated: animated) {
             if disposeDrawer {
+                self.drawerState = .closed
                 self.activeDrawer = nil
                 self.dismissCompletion?()
             }

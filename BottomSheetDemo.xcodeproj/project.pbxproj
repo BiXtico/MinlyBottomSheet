@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5CBA1AA82CB413FA00BB236C /* DrawerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CBA1AA72CB413F000BB236C /* DrawerManager.swift */; };
 		7D05F3052741359800EBDBB1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D05F3042741359800EBDBB1 /* AppDelegate.swift */; };
 		7D05F30B2741359C00EBDBB1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7D05F30A2741359C00EBDBB1 /* Assets.xcassets */; };
 		7D05F3112741359C00EBDBB1 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7D05F30F2741359C00EBDBB1 /* LaunchScreen.storyboard */; };
@@ -78,6 +79,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		5CBA1AA72CB413F000BB236C /* DrawerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawerManager.swift; sourceTree = "<group>"; };
 		7D05F3012741359800EBDBB1 /* BottomSheetDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BottomSheetDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7D05F3042741359800EBDBB1 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		7D05F30A2741359C00EBDBB1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -318,6 +320,7 @@
 		7DD5184D28AA2F3B003F3D2A /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
+				5CBA1AA72CB413F000BB236C /* DrawerManager.swift */,
 				7DD5184E28AA2F46003F3D2A /* UIViewController+Convenience.swift */,
 			);
 			path = Extensions;
@@ -517,6 +520,7 @@
 				7DA6E0E6274F9196009F5C37 /* CGSize+Helpers.swift in Sources */,
 				7DD5185028AA2FBA003F3D2A /* UIViewController+Convenience.swift in Sources */,
 				7DA6E0E2274F9196009F5C37 /* UIViewController+Lifecycle.swift in Sources */,
+				5CBA1AA82CB413FA00BB236C /* DrawerManager.swift in Sources */,
 				7DA6E0D9274F9186009F5C37 /* BottomSheetTransitioningDelegate.swift in Sources */,
 				7DA6E0E3274F9196009F5C37 /* CGRect+Helpers.swift in Sources */,
 				7DA6E0E0274F9196009F5C37 /* BinaryFloatingPoint+Helpers.swift in Sources */,

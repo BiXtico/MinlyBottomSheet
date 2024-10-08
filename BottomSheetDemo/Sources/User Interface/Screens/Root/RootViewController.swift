@@ -10,7 +10,18 @@ import BottomSheet
 import SnapKit
 import UIKit
 
-final class RootViewController: UIViewController {
+final class RootViewController: UIViewController, DrawerStateDelegate {
+    func drawerStateDidChange(to state: BottomSheet.DrawerState) {
+        switch state {
+        case .opened:
+            // Handle when the drawer is opened (e.g., adjust view height)
+            print("Drawer opened")
+        case .closed:
+            // Handle when the drawer is closed
+            print("Drawer closed")
+        }
+    }
+
     private var drawerManager: DrawerManager!
     private let button: UIButton = {
         let button = UIButton()
@@ -33,6 +44,7 @@ final class RootViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         drawerManager = DrawerManager(parentController: self)
+        drawerManager.drawerStateDelegate = self
         setupSubviews()
     }
 
